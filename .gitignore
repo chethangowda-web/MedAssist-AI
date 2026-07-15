@@ -21,6 +21,7 @@ build/
 .idea/
 *.swp
 *.swo
+.history/
 
 # OS
 .DS_Store
