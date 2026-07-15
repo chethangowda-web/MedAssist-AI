@@ -1,0 +1,73 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: medassist-backend
+  annotations:
+    run.googleapis.com/cpu-throttling: "false"
+    run.googleapis.com/startup-cpu-boost: "true"
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "10"
+        autoscaling.knative.dev/minScale: "1"
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/startup-cpu-boost: "true"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      serviceAccountName: medassist-backend-sa@PROJECT_ID.iam.gserviceaccount.com
+      containers:
+        - image: gcr.io/PROJECT_ID/medassist-backend:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          env:
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemini-api-key
+                  key: latest
+            - name: FIREBASE_PROJECT_ID
+              value: "PROJECT_ID"
+            - name: FIREBASE_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: firebase-private-key
+                  key: latest
+            - name: FIREBASE_CLIENT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: firebase-client-email
+                  key: latest
+            - name: QDRANT_HOST
+              value: "medassist-qdrant.up.railway.app"
+            - name: QDRANT_PORT
+              value: "6333"
+            - name: REDIS_URL
+              value: "redis://redis-service:6379"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: latest
+            - name: CORS_ORIGINS
+              value: "[\"https://medassist-ai.web.app\",\"https://medassist-ai.firebaseapp.com\"]"
+            - name: DEBUG
+              value: "false"
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
