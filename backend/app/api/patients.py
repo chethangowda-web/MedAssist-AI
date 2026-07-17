@@ -6,6 +6,7 @@ from app.agents.risk_assessment_agent import risk_assessment_agent
 from app.services.firestore_service import firestore_service
 from app.core.security import get_current_user
 from typing import Optional
+from datetime import datetime
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
 
@@ -44,7 +45,7 @@ async def update_patient(patient_id: str, data: PatientUpdate, current_user: dic
 
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     if update_data:
-        update_data["updated_at"] = __import__("datetime").datetime.now().isoformat()
+        update_data["updated_at"] = datetime.now().isoformat()
         firestore_service.update_document("patients", patient_id, update_data)
 
     updated = firestore_service.get_document("patients", patient_id)
@@ -95,5 +96,5 @@ async def delete_patient(patient_id: str, current_user: dict = Depends(get_curre
     if not existing:
         raise HTTPException(status_code=404, detail="Patient not found")
 
-    firestore_service.update_document("patients", patient_id, {"is_active": False, "updated_at": __import__("datetime").datetime.now().isoformat()})
+    firestore_service.update_document("patients", patient_id, {"is_active": False, "updated_at": datetime.now().isoformat()})
     return {"status": "success", "message": "Patient deactivated"}

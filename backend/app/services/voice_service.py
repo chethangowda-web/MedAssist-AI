@@ -23,10 +23,23 @@ class VoiceService:
     def speech_to_text(self, audio_bytes: bytes, language: str = "en") -> str:
         try:
             import speech_recognition as sr
+            import tempfile
+            import os
 
             recognizer = sr.Recognizer()
-            with sr.AudioFile(audio_bytes) as source:
-                audio = recognizer.record(source)
+            suffix = ".wav"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                tmp.write(audio_bytes)
+                tmp_path = tmp.name
+
+            try:
+                with sr.AudioFile(tmp_path) as source:
+                    audio = recognizer.record(source)
+            finally:
+                try:
+                    os.unlink(tmp_path)
+                except:
+                    pass
 
             lang_map = {
                 "hi": "hi-IN", "en": "en-US", "bn": "bn-IN",

@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.schemas.visit import VisitCreate, VisitResponse
 from app.services.firestore_service import firestore_service
 from app.core.security import get_current_user
-from app.models.visit import Visit
+from app.models.visit import Visit, Symptom, Diagnosis, Prescription
 from typing import Optional
+from datetime import datetime
 import uuid
 
 router = APIRouter(prefix="/visits", tags=["Visits"])
@@ -20,10 +21,10 @@ async def create_visit(data: VisitCreate, current_user: dict = Depends(get_curre
         patient_name=patient.get("name", ""),
         visit_type=data.visit_type,
         chief_complaint=data.chief_complaint,
-        symptoms=[__import__("app.models.visit", fromlist=["Symptom"]).Symptom(**s.model_dump()) for s in data.symptoms],
+        symptoms=[Symptom(**s.model_dump()) for s in data.symptoms],
         vital_signs=data.vital_signs,
-        diagnosis=[__import__("app.models.visit", fromlist=["Diagnosis"]).Diagnosis(**d.model_dump()) for d in data.diagnosis],
-        prescriptions=[__import__("app.models.visit", fromlist=["Prescription"]).Prescription(**p.model_dump()) for p in data.prescriptions],
+        diagnosis=[Diagnosis(**d.model_dump()) for d in data.diagnosis],
+        prescriptions=[Prescription(**p.model_dump()) for p in data.prescriptions],
         investigations=data.investigations,
         notes=data.notes,
         referred_to=data.referred_to,
@@ -37,7 +38,7 @@ async def create_visit(data: VisitCreate, current_user: dict = Depends(get_curre
     if data.vital_signs:
         firestore_service.update_document("patients", data.patient_id, {
             "vital_signs": data.vital_signs,
-            "updated_at": __import__("datetime").datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
         })
 
     return {"status": "success", "visit": visit.to_dict()}

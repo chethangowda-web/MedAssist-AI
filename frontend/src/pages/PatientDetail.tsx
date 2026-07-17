@@ -33,7 +33,7 @@ export function PatientDetail() {
 
   const { data: visitsData } = useQuery({
     queryKey: ['patient-visits', id],
-    queryFn: () => visitApi.list({ patientId: id, pageSize: 10 }).then(r => r.data),
+    queryFn: () => visitApi.list({ patient_id: id, page_size: 10 }).then(r => r.data),
     enabled: !!id,
   });
 
@@ -47,8 +47,9 @@ export function PatientDetail() {
     onError: (err: any) => toast.error(err?.response?.data?.detail || 'Assessment failed'),
   });
 
+  const [selectedReportType, setSelectedReportType] = useState('patient_summary');
   const reportMutation = useMutation({
-    mutationFn: () => reportApi.generate({ patient_id: id, report_type: 'patient_summary', format: 'json' }),
+    mutationFn: (reportType: string) => reportApi.generate({ patient_id: id, report_type: reportType, format: 'json' }),
     onSuccess: () => {
       toast.success('Report generated');
       setShowReportModal(false);
@@ -258,7 +259,7 @@ export function PatientDetail() {
           {['patient_summary', 'medical_report', 'referral_letter', 'visit_report'].map((type) => (
             <button
               key={type}
-              onClick={() => reportMutation.mutate()}
+              onClick={() => reportMutation.mutate(type)}
               className="w-full text-left p-4 rounded-xl bg-surface-50 dark:bg-surface-800/50 hover:bg-surface-100 dark:hover:bg-surface-700/50 transition-colors"
             >
               <p className="font-medium text-surface-900 dark:text-white capitalize">{type.replace(/_/g, ' ')}</p>

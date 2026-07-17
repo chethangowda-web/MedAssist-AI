@@ -86,16 +86,15 @@ class ReportGeneratorAgent(BaseAgent):
             firestore_service.create_document("reports", report.id, report.to_dict())
 
             if pdf_bytes:
-                from app.core.firebase import get_db
-                bucket_name = f"{firestore_service.db.project}_reports"
                 try:
-                    from google.cloud import storage
-                    storage_client = storage.Client()
-                    bucket = storage_client.bucket(bucket_name)
-                    blob = bucket.blob(f"reports/{report.id}.pdf")
-                    blob.upload_from_string(pdf_bytes, content_type="application/pdf")
-                    report.file_url = blob.public_url
-                    firestore_service.update_document("reports", report.id, {"file_url": report.file_url})
+                    from app.core.firebase import get_bucket
+                    bucket = get_bucket()
+                    if bucket:
+                        blob = bucket.blob(f"reports/{report.id}.pdf")
+                        blob.upload_from_string(pdf_bytes, content_type="application/pdf")
+                        blob.make_public()
+                        report.file_url = blob.public_url
+                        firestore_service.update_document("reports", report.id, {"file_url": report.file_url})
                 except Exception as e:
                     logger.warning(f"Could not upload PDF to cloud storage: {e}")
 

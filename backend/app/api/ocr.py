@@ -89,29 +89,32 @@ async def upload_medical_document(
         raise HTTPException(status_code=400, detail="File too large (max 10MB)")
 
     try:
-        bucket = get_bucket()
-        blob = bucket.blob(f"medical-documents/{patient_id}/{file.filename}")
-        blob.upload_from_string(image_bytes, content_type=file.content_type)
-        blob.make_public()
-
         text = ocr_service.extract_text_from_image(image_bytes, file.filename)
         parsed = ocr_service.parse_medical_report(text)
+
+        file_url = ""
+        bucket = get_bucket()
+        if bucket:
+            blob = bucket.blob(f"medical-documents/{patient_id}/{file.filename}")
+            blob.upload_from_string(image_bytes, content_type=file.content_type)
+            blob.make_public()
+            file_url = blob.public_url
 
         doc = {
             "patient_id": patient_id,
             "document_type": document_type,
             "filename": file.filename,
-            "file_url": blob.public_url,
+            "file_url": file_url,
             "extracted_text": text,
             "parsed_data": parsed,
-            "uploaded_by": current_user.get("uid", "unknown"),
+            "uploaded_by": current_user.get("user_id", "unknown"),
         }
-        firestore_service.create_document("medical_documents", None, doc)
+        firestore_service.create_document("medical_documents", file.filename, doc)
 
         return {
             "status": "success",
             "filename": file.filename,
-            "file_url": blob.public_url,
+            "file_url": file_url,
             "extracted_text": text,
             "parsed_data": parsed,
         }

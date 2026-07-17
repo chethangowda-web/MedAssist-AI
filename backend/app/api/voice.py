@@ -32,10 +32,11 @@ async def speech_to_text(
 
 @router.post("/text-to-speech")
 async def text_to_speech(
-    text: str = Form(...),
-    language: str = Form("en"),
+    request: dict,
     current_user: dict = Depends(get_current_user),
 ):
+    text = request.get("text", "")
+    language = request.get("language", "en")
     if not text.strip():
         raise HTTPException(status_code=400, detail="No text provided")
 

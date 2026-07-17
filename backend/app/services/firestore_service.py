@@ -4,7 +4,7 @@ from google.cloud.firestore import Query
 import os
 
 # Development mode - use in-memory storage when Firebase not configured
-DEV_MODE = True  # Force dev mode for local development
+DEV_MODE = os.getenv("FIRESTORE_DEV_MODE", "true").lower() == "true"
 
 # In-memory storage for development
 _dev_db: Dict[str, Dict[str, Dict[str, Any]]] = {}

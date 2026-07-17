@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional
 from abc import ABC, abstractmethod
 from datetime import datetime
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,5 +24,3 @@ class BaseAgent(ABC):
             "timestamp": datetime.now().isoformat(),
             "details": details or {},
         }))
-
-import json

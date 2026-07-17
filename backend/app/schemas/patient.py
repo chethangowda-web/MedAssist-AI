@@ -64,26 +64,28 @@ class PatientResponse(BaseModel):
     id: str
     patient_id: str
     name: str
-    age: Optional[int]
-    date_of_birth: Optional[str]
-    gender: str
-    phone: str
-    alternate_phone: str
-    email: str
-    address: AddressSchema
-    aadhar_number: str
-    blood_group: str
-    medical_history: MedicalHistorySchema
-    vital_signs: VitalSignsSchema
-    registered_by: str
-    registered_at: str
-    updated_at: str
-    is_active: bool
-    tags: List[str]
-    notes: str
-    profile_image_url: str
-    emergency_contact: str
-    language_preference: str
+    age: Optional[int] = None
+    date_of_birth: Optional[str] = None
+    gender: str = ""
+    phone: str = ""
+    alternate_phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[AddressSchema] = None
+    aadhar_number: Optional[str] = None
+    blood_group: Optional[str] = None
+    medical_history: Optional[MedicalHistorySchema] = None
+    vital_signs: Optional[VitalSignsSchema] = None
+    registered_by: str = ""
+    registered_at: str = ""
+    updated_at: str = ""
+    is_active: bool = True
+    tags: List[str] = []
+    notes: str = ""
+    profile_image_url: str = ""
+    emergency_contact: Optional[str] = None
+    language_preference: str = "en"
+    risk_score: Optional[float] = None
+    risk_level: Optional[str] = None
 
 class PatientListResponse(BaseModel):
     patients: List[PatientResponse]

@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.api import auth, patients, visits, agents, reports, dashboard, voice, ocr, emergency, medicine
 import logging
 import time
+from datetime import datetime
 
 logging.basicConfig(
     level=logging.INFO,
@@ -35,6 +36,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.options("/{path:path}")
+async def options_handler(path: str):
+    return {"message": "OK"}
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -78,6 +83,6 @@ async def root():
 async def health():
     return {
         "status": "healthy",
-        "timestamp": __import__("datetime").datetime.now().isoformat(),
+        "timestamp": datetime.now().isoformat(),
         "version": settings.APP_VERSION,
     }

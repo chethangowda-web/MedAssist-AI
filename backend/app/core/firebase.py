@@ -4,6 +4,7 @@ from app.core.config import settings
 import json
 import os
 import jwt
+import logging
 
 _firebase_app = None
 _db = None
@@ -98,8 +99,15 @@ def verify_firebase_token(id_token: str) -> dict:
         raise ValueError(f"Invalid Firebase token: {str(e)}")
 
 def get_bucket():
-    get_firebase_app()
-    from google.cloud import storage
-    client = storage.Client()
-    bucket = client.bucket(f"{settings.FIREBASE_PROJECT_ID}.appspot.com")
-    return bucket
+    if DEV_MODE:
+        return None
+    try:
+        get_firebase_app()
+        from google.cloud import storage
+        client = storage.Client()
+        bucket = client.bucket(f"{settings.FIREBASE_PROJECT_ID}.appspot.com")
+        return bucket
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Failed to get storage bucket: {e}")
+        return None

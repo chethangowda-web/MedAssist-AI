@@ -1,7 +1,10 @@
 from app.agents.base_agent import BaseAgent
 from app.services.gemini_service import gemini_service
 from app.services.firestore_service import firestore_service
+from app.models.visit import Visit
 from typing import Dict, Any, List
+from datetime import datetime
+import uuid
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,6 +29,16 @@ class RiskAssessmentAgent(BaseAgent):
             if not patient_data:
                 return {"status": "error", "error": "Patient data not found"}
 
+            # Merge vital signs and symptoms from request into patient data for assessment
+            if input_data.get("vital_signs"):
+                if not patient_data.get("vital_signs"):
+                    patient_data["vital_signs"] = {}
+                patient_data["vital_signs"].update(
+                    {k: v for k, v in input_data["vital_signs"].items() if v is not None}
+                )
+            if input_data.get("symptoms"):
+                patient_data["symptoms"] = input_data["symptoms"]
+
             risk_assessment = gemini_service.assess_medical_risk(patient_data)
 
             visit_data = {
@@ -43,8 +56,6 @@ class RiskAssessmentAgent(BaseAgent):
                          f"Recommendations: {'; '.join(risk_assessment.get('recommendations', []))}",
             }
 
-            from app.models.visit import Visit
-            import uuid
             visit = Visit(
                 id=str(uuid.uuid4()),
                 patient_id=patient_id,
@@ -62,7 +73,7 @@ class RiskAssessmentAgent(BaseAgent):
             patient_update = {
                 "risk_score": risk_assessment.get("overall_risk_score", 0),
                 "risk_level": risk_assessment.get("risk_level", "low"),
-                "updated_at": __import__('datetime').datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
             }
             if patient_id:
                 firestore_service.update_document("patients", patient_id, patient_update)

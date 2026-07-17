@@ -93,7 +93,7 @@ export function Schemes() {
 
   const { data: patientsData } = useQuery({
     queryKey: ['patients-list'],
-    queryFn: () => patientApi.list({ pageSize: 100 }).then(r => r.data),
+    queryFn: () => patientApi.list({ page_size: 100 }).then(r => r.data),
   });
 
   const recommendMutation = useMutation({

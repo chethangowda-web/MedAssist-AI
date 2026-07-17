@@ -14,9 +14,9 @@ export function useAuth() {
     try {
       setLoading(true);
       const response = await authApi.login(email, password);
-      const { access_token, user_id, email: userEmail, name, role } = response.data;
-      const userData: User = { id: user_id, email: userEmail, name, role, phone: '', isActive: true, createdAt: '' };
-      setAuth(userData, access_token);
+      const { accessToken, userId, email: userEmail, name, role } = response.data;
+      const userData: User = { id: userId, email: userEmail, name, role, phone: '', isActive: true, createdAt: '' };
+      setAuth(userData, accessToken);
       toast.success(`Welcome back, ${name}!`);
       navigate('/dashboard');
     } catch (error: any) {
@@ -28,13 +28,13 @@ export function useAuth() {
     }
   }, [navigate, setAuth, setLoading]);
 
-  const register = useCallback(async (data: { email: string; password: string; name: string; role: string }) => {
+  const register = useCallback(async (data: { email: string; password: string; name: string; role: string; phone?: string }) => {
     try {
       setLoading(true);
       const response = await authApi.register(data);
-      const { access_token, user_id, email, name, role } = response.data;
-      const userData: User = { id: user_id, email, name, role, phone: '', isActive: true, createdAt: '' };
-      setAuth(userData, access_token);
+      const { accessToken, userId, email, name, role } = response.data;
+      const userData: User = { id: userId, email, name, role, phone: '', isActive: true, createdAt: '' };
+      setAuth(userData, accessToken);
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (error: any) {
@@ -52,9 +52,9 @@ export function useAuth() {
       const firebaseUser = await signInWithGoogle();
       const idToken = await firebaseUser.getIdToken();
       const response = await authApi.firebaseAuth(idToken);
-      const { access_token, user_id, email, name, role } = response.data;
-      const userData: User = { id: user_id, email, name, role, phone: '', isActive: true, createdAt: '' };
-      setAuth(userData, access_token);
+      const { accessToken, userId, email, name, role } = response.data;
+      const userData: User = { id: userId, email, name, role, phone: '', isActive: true, createdAt: '' };
+      setAuth(userData, accessToken);
       toast.success(`Welcome, ${name}!`);
       navigate('/dashboard');
     } catch (error: any) {

@@ -3,7 +3,10 @@ from fastapi.responses import Response
 from app.schemas.report import ReportGenerate, ReportResponse
 from app.services.firestore_service import firestore_service
 from app.core.security import get_current_user
+from app.agents.report_generator_agent import report_generator_agent
+from app.services.pdf_service import pdf_generator
 from typing import Optional
+import httpx
 import base64
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
@@ -21,7 +24,6 @@ async def generate_report(data: ReportGenerate, current_user: dict = Depends(get
         limit=10,
     )
 
-    from app.agents.report_generator_agent import report_generator_agent
     result = await report_generator_agent.process({
         "patient_id": data.patient_id,
         "patient_data": patient,
@@ -41,7 +43,6 @@ async def generate_report(data: ReportGenerate, current_user: dict = Depends(get
 
 @router.get("/{report_id}")
 async def get_report(report_id: str, current_user: dict = Depends(get_current_user)):
-    from app.agents.report_generator_agent import report_generator_agent
     report = await report_generator_agent.get_report(report_id)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
@@ -49,17 +50,20 @@ async def get_report(report_id: str, current_user: dict = Depends(get_current_us
 
 @router.get("/{report_id}/pdf")
 async def download_report_pdf(report_id: str, current_user: dict = Depends(get_current_user)):
-    from app.agents.report_generator_agent import report_generator_agent
     report = await report_generator_agent.get_report(report_id)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
 
-    if report.get("file_url"):
-        import httpx
+    if report.get("file_url") and report["file_url"].startswith("http"):
         async with httpx.AsyncClient() as client:
             resp = await client.get(report["file_url"])
             return Response(content=resp.content, media_type="application/pdf",
                           headers={"Content-Disposition": f"attachment; filename={report_id}.pdf"})
+
+    pdf_bytes = pdf_generator.generate_patient_summary(report, [])
+    if pdf_bytes:
+        return Response(content=pdf_bytes, media_type="application/pdf",
+                      headers={"Content-Disposition": f"attachment; filename={report_id}.pdf"})
 
     raise HTTPException(status_code=404, detail="PDF not available")
 
@@ -70,7 +74,6 @@ async def list_reports(
     page_size: int = Query(20, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
 ):
-    from app.agents.report_generator_agent import report_generator_agent
     result = await report_generator_agent.list_reports(patient_id, page_size)
     return {
         "reports": result["reports"],

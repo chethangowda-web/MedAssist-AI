@@ -40,12 +40,17 @@ class GovernmentSchemeAgent(BaseAgent):
             schemes = self._get_default_schemes()
 
             recommendation = gemini_service.recommend_schemes(patient_profile, schemes)
-
             recommended = recommendation.get("recommended_schemes", [])
+
+            used_fallback = False
+            if not recommended and "unavailable" in recommendation.get("general_advice", ""):
+                recommended = self._rule_based_match(patient_profile, schemes)
+                used_fallback = True
 
             self.log_activity("recommendation_completed", "success", {
                 "patient_id": patient_id,
                 "schemes_recommended": len(recommended),
+                "used_fallback": used_fallback,
             })
 
             return {
@@ -53,13 +58,59 @@ class GovernmentSchemeAgent(BaseAgent):
                 "patient_id": patient_id,
                 "recommended_schemes": recommended,
                 "total_schemes": len(recommended),
-                "general_advice": recommendation.get("general_advice", ""),
+                "general_advice": "Based on the patient profile, the following schemes may be applicable." if used_fallback else recommendation.get("general_advice", ""),
                 "all_schemes": schemes,
             }
 
         except Exception as e:
             self.log_activity("recommendation_failed", "error", {"error": str(e)})
             return {"status": "error", "error": str(e)}
+
+    def _rule_based_match(self, profile: Dict[str, Any], schemes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        matched = []
+        age = profile.get("age")
+        gender = profile.get("gender", "").lower()
+        is_pregnant = profile.get("is_pregnant", False)
+        has_children = profile.get("has_children", False)
+        bpl = profile.get("bpl_card", False)
+        income = profile.get("monthly_income")
+
+        for s in schemes:
+            cat = s.get("category", "")
+            elig = [e.lower() for e in s.get("eligibility", [])]
+            reason = None
+
+            if cat == "health_insurance" and any("bpl" in e or "below poverty" in e for e in elig):
+                if bpl or income is None:
+                    reason = "Applicable for BPL families"
+            if cat == "health_insurance" and "sec" in " ".join(elig):
+                if bpl or income is None:
+                    reason = "Available for eligible families as per SECC database"
+            if cat == "maternal" and is_pregnant:
+                reason = "Eligible for pregnant women"
+            if cat == "child" and (has_children or (age is not None and age < 2)):
+                reason = "Applicable for children"
+            if cat == "child_nutrition" and (has_children or (age is not None and 6 <= age <= 14)):
+                reason = "Applicable for school-age children"
+            if cat == "primary_care":
+                reason = "Available to all residents"
+            if cat == "insurance":
+                if age is not None and 18 <= age <= 70:
+                    reason = f"Available for ages 18-70"
+            if cat == "financial":
+                reason = "Available for small business owners and entrepreneurs"
+
+            if reason:
+                matched.append({
+                    "scheme_name": s.get("name", ""),
+                    "scheme_id": s.get("scheme_id", ""),
+                    "match_score": 0.7,
+                    "eligibility_reason": reason,
+                    "benefits": s.get("benefits", []),
+                    "application_steps": s.get("application_process", "Contact local health department or visit the official website."),
+                })
+
+        return matched[:5]
 
     def _get_default_schemes(self) -> List[Dict[str, Any]]:
         return [

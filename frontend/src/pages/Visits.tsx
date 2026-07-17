@@ -29,12 +29,12 @@ export function Visits() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['visits'],
-    queryFn: () => visitApi.list({ pageSize: 50 }).then(r => r.data),
+    queryFn: () => visitApi.list({ page_size: 50 }).then(r => r.data),
   });
 
   const { data: patientsData } = useQuery({
     queryKey: ['patients-list'],
-    queryFn: () => patientApi.list({ pageSize: 100 }).then(r => r.data),
+    queryFn: () => patientApi.list({ page_size: 100 }).then(r => r.data),
   });
 
   const createMutation = useMutation({

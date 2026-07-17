@@ -92,27 +92,25 @@ class MedicineScannerService:
             "8901": "India - medicine",
         }
 
-    def search_by_barcode(self, barcode: str) -> Optional[Dict[str, Any]]:
+    async def search_by_barcode(self, barcode: str) -> Optional[Dict[str, Any]]:
         try:
             import aiohttp
 
-            async def lookup():
-                url = f"https://world.openfoodfacts.org/api/v3/product/{barcode}.json"
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url) as response:
-                        if response.status == 200:
-                            data = await response.json()
-                            if data.get("status") == 1:
-                                product = data["product"]
-                                return {
-                                    "barcode": barcode,
-                                    "product_name": product.get("product_name", ""),
-                                    "brand": product.get("brands", ""),
-                                    "category": product.get("categories", ""),
-                                    "ingredients": product.get("ingredients_text", ""),
-                                    "nutriments": product.get("nutriments", {}),
-                                }
-            return None
+            url = f"https://world.openfoodfacts.org/api/v3/product/{barcode}.json"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get("status") == 1:
+                            product = data["product"]
+                            return {
+                                "barcode": barcode,
+                                "product_name": product.get("product_name", ""),
+                                "brand": product.get("brands", ""),
+                                "category": product.get("categories", ""),
+                                "ingredients": product.get("ingredients_text", ""),
+                                "nutriments": product.get("nutriments", {}),
+                            }
 
         except ImportError:
             logger.warning("aiohttp not available for barcode lookup")

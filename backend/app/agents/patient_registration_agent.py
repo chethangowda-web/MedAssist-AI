@@ -4,6 +4,7 @@ from app.services.firestore_service import firestore_service
 from app.models.patient import Patient, Address, MedicalHistory, VitalSigns
 from typing import Dict, Any, Optional
 from datetime import datetime
+import re
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,11 +38,48 @@ class PatientRegistrationAgent(BaseAgent):
                 "patient_id": None,
             }
 
+    def _regex_extract_patient_info(self, text: str) -> Dict[str, Any]:
+        result = {
+            "name": "", "age": None, "gender": "", "phone": "",
+            "address": {"street": "", "city": "", "state": "", "pincode": "", "village": ""},
+            "symptoms": [], "medical_conditions": [], "vital_signs": {},
+            "emergency": False,
+        }
+        name_match = re.search(r'(?:Register|Name|Patient|Pt)\s*:?\s*([A-Za-z\s]+?)(?:,|\s+\d|\n|$)', text, re.IGNORECASE)
+        if name_match:
+            result["name"] = name_match.group(1).strip()
+        age_match = re.search(r'(\d+)\s*(?:years?\s*old|yr|y)', text, re.IGNORECASE)
+        if age_match:
+            result["age"] = int(age_match.group(1))
+        gender_match = re.search(r'\b(male|female|man|woman|boy|girl)\b', text, re.IGNORECASE)
+        if gender_match:
+            raw = gender_match.group(1).lower()
+            if raw in ("male", "man", "boy"):
+                result["gender"] = "male"
+            elif raw in ("female", "woman", "girl"):
+                result["gender"] = "female"
+        phone_match = re.search(r'(\+?\d[\d\s\-\(\)]{7,}\d)', text)
+        if phone_match:
+            result["phone"] = phone_match.group(1).strip()
+        village_match = re.search(r'(?:village|town|area)\s+(?:of\s+)?([A-Za-z\s]+?)(?:,|\.|$)', text, re.IGNORECASE)
+        if village_match:
+            result["address"]["village"] = village_match.group(1).strip()
+        symptom_keywords = ["fever", "headache", "cough", "cold", "pain", "nausea", "vomiting",
+                           "fatigue", "dizziness", "rash", "infection", "diarrhea", "constipation",
+                           "breathlessness", "swelling", "body ache", "chills"]
+        text_lower = text.lower()
+        for kw in symptom_keywords:
+            if kw in text_lower:
+                result["symptoms"].append(kw.capitalize())
+        return result
+
     async def _register_from_natural_language(self, data: Dict[str, Any]) -> Dict[str, Any]:
         text = data.get("text", "")
         registered_by = data.get("registered_by", "")
 
         extracted = gemini_service.extract_patient_info(text)
+        if not extracted.get("name") and not extracted.get("age") and not extracted.get("gender"):
+            extracted = self._regex_extract_patient_info(text)
 
         patient = Patient(
             name=extracted.get("name", ""),

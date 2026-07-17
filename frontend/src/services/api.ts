@@ -3,6 +3,24 @@ import { useAuthStore } from '@store/authStore';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+function snakeToCamel(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+function transformKeys(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) return obj.map(transformKeys);
+  if (typeof obj === 'object' && !(obj instanceof Blob) && !(obj instanceof File) && !(obj instanceof FormData)) {
+    const result: any = {};
+    for (const key of Object.keys(obj)) {
+      const camelKey = snakeToCamel(key);
+      result[camelKey] = transformKeys(obj[key]);
+    }
+    return result;
+  }
+  return obj;
+}
+
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   timeout: 30000,
@@ -23,7 +41,12 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data && typeof response.data === 'object') {
+      response.data = transformKeys(response.data);
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       useAuthStore.getState().logout();
@@ -52,7 +75,7 @@ export const patientApi = {
     api.get(`/patients/${id}`),
   update: (id: string, data: any) =>
     api.put(`/patients/${id}`, data),
-  list: (params?: { page?: number; pageSize?: number; search?: string }) =>
+  list: (params?: { page?: number; page_size?: number; search?: string }) =>
     api.get('/patients/', { params }),
   delete: (id: string) =>
     api.delete(`/patients/${id}`),
@@ -65,7 +88,7 @@ export const visitApi = {
     api.post('/visits/', data),
   getById: (id: string) =>
     api.get(`/visits/${id}`),
-  list: (params?: { patientId?: string; page?: number; pageSize?: number }) =>
+  list: (params?: { patient_id?: string; page?: number; page_size?: number }) =>
     api.get('/visits/', { params }),
 };
 
@@ -101,7 +124,6 @@ export const voiceApi = {
     formData.append('audio', audio, 'recording.webm');
     formData.append('language', language);
     return api.post('/voice/speech-to-text', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 60000,
     });
   },
@@ -115,25 +137,19 @@ export const ocrApi = {
   extractText: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post('/ocr/extract', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return api.post('/ocr/extract', formData);
   },
   extractPrescription: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post('/ocr/prescription', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return api.post('/ocr/prescription', formData);
   },
   uploadDocument: (file: File, patientId: string, documentType: string) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('patient_id', patientId);
     formData.append('document_type', documentType);
-    return api.post('/ocr/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return api.post('/ocr/upload', formData);
   },
 };
 

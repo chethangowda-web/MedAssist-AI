@@ -31,7 +31,7 @@ export function Reports() {
 
   const { data: patientsData } = useQuery({
     queryKey: ['patients-list'],
-    queryFn: () => patientApi.list({ pageSize: 100 }).then(r => r.data),
+    queryFn: () => patientApi.list({ page_size: 100 }).then(r => r.data),
   });
 
   const generateMutation = useMutation({

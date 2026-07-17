@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, FirebaseAuthRequest, UserProfile
-from app.core.security import verify_password, get_password_hash, create_access_token
+from app.core.security import verify_password, get_password_hash, create_access_token, get_current_user
+from app.core.firebase import verify_firebase_token
 from app.services.firestore_service import firestore_service
-from datetime import timedelta
+from datetime import timedelta, datetime
 import uuid
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -22,7 +23,7 @@ async def register(request: RegisterRequest):
         "role": request.role,
         "phone": request.phone or "",
         "is_active": True,
-        "created_at": __import__("datetime").datetime.now().isoformat(),
+        "created_at": datetime.now().isoformat(),
     }
     firestore_service.create_document("users", user_id, user_data)
 
@@ -67,7 +68,6 @@ async def login(request: LoginRequest):
 
 @router.post("/firebase", response_model=TokenResponse)
 async def firebase_auth(request: FirebaseAuthRequest):
-    from app.core.firebase import verify_firebase_token
     try:
         decoded = verify_firebase_token(request.id_token)
         email = decoded.get("email", "")
@@ -86,7 +86,7 @@ async def firebase_auth(request: FirebaseAuthRequest):
                 "role": "healthcare_worker",
                 "phone": "",
                 "is_active": True,
-                "created_at": __import__("datetime").datetime.now().isoformat(),
+                "created_at": datetime.now().isoformat(),
             })
 
         access_token = create_access_token(
@@ -105,7 +105,7 @@ async def firebase_auth(request: FirebaseAuthRequest):
         raise HTTPException(status_code=401, detail=f"Firebase auth failed: {str(e)}")
 
 @router.get("/profile", response_model=UserProfile)
-async def get_profile(current_user: dict = Depends(__import__("app.core.security", fromlist=["get_current_user"]).get_current_user)):
+async def get_profile(current_user: dict = Depends(get_current_user)):
     user = firestore_service.get_document("users", current_user["user_id"])
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

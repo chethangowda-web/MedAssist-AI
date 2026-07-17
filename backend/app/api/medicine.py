@@ -12,6 +12,9 @@ router = APIRouter(prefix="/medicine", tags=["Medicine"])
 class InteractionRequest(BaseModel):
     medicines: List[str]
 
+class IdentifyRequest(BaseModel):
+    text: str
+
 
 @router.get("/search")
 async def search_medicine(
@@ -34,10 +37,10 @@ async def search_medicine(
 
 @router.post("/identify")
 async def identify_medicine(
-    text: str,
+    request: IdentifyRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    results = medicine_scanner_service.identify_medicine(text)
+    results = medicine_scanner_service.identify_medicine(request.text)
     return {
         "identifications": results,
         "total_found": len(results),
@@ -61,7 +64,7 @@ async def lookup_by_barcode(
     barcode: str,
     current_user: dict = Depends(get_current_user),
 ):
-    result = medicine_scanner_service.search_by_barcode(barcode)
+    result = await medicine_scanner_service.search_by_barcode(barcode)
     if not result:
         return {
             "status": "not_found",
