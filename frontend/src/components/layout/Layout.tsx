@@ -4,7 +4,6 @@ import { useAuthStore } from '@store/authStore';
 import { useAppStore } from '@store/appStore';
 import { cn } from '@utils/helpers';
 import { motion } from 'framer-motion';
-import { useThemeStore } from '@store/themeStore';
 
 export function Layout() {
   const { isAuthenticated } = useAuthStore();

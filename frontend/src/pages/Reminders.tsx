@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as Icons from 'lucide-react';
-import type { Reminder } from '@types/index';
+import type { Reminder } from '@typings/index';
 
 const typeIcons: Record<string, any> = {
   Syringe: Icons.Syringe, Pill: Icons.Pill, CalendarCheck: Icons.CalendarCheck,

@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '@store/authStore';
 import { authApi } from '@services/api';
 import { signInWithGoogle, signOutUser } from '@services/firebase';
-import type { User } from '@types/index';
+import type { User } from '@typings/index';
 
 export function useAuth() {
   const navigate = useNavigate();

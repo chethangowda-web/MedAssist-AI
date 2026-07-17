@@ -23,7 +23,7 @@
       "@hooks/*": ["src/hooks/*"],
       "@store/*": ["src/store/*"],
       "@services/*": ["src/services/*"],
-      "@types/*": ["src/types/*"],
+      "@typings/*": ["src/types/*"],
       "@utils/*": ["src/utils/*"]
     }
   },

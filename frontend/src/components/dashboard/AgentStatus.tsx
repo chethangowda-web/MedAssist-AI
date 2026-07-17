@@ -30,7 +30,7 @@ export function AgentStatus() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
             whileHover={{ y: -2 }}
-            onClick={() => navigate('/agents')}
+            onClick={() => navigate('/app/agents')}
             className="glass-card p-4 text-center cursor-pointer group"
           >
             <div className={cn('w-10 h-10 mx-auto rounded-xl bg-gradient-to-br flex items-center justify-center mb-2 group-hover:scale-110 transition-transform', agent.color)}>

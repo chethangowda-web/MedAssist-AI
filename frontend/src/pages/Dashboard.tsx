@@ -14,7 +14,7 @@ import {
   Users, Stethoscope, Bell, AlertTriangle, Activity, FileText,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import type { DashboardStats } from '@types/index';
+import type { DashboardStats } from '@typings/index';
 
 export function Dashboard() {
   const navigate = useNavigate();

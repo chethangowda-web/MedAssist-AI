@@ -24,7 +24,7 @@ export function Register() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await register({ email, password, name, role });
+      await register({ email, password, name, role, phone });
     } catch {
       // error handled in hook
     } finally {

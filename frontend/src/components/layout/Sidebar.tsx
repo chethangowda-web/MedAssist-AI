@@ -17,7 +17,7 @@ const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/patients', label: 'Patients', icon: Users },
   { path: '/visits', label: 'Visits', icon: Stethoscope },
-  { path: '/agents', label: 'AI Agents', icon: Brain },
+  { path: '/app/agents', label: 'AI Agents', icon: Brain },
   { path: '/reminders', label: 'Reminders', icon: Bell },
   { path: '/reports', label: 'Reports', icon: FileText },
   { path: '/schemes', label: 'Schemes', icon: ShieldCheck },

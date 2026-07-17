@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import type { Visit } from '@types/index';
+import type { Visit } from '@typings/index';
 
 export function Visits() {
   const navigate = useNavigate();

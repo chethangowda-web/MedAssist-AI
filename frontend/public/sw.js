@@ -1,153 +1,107 @@
-const CACHE_NAME = 'medassist-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.svg',
-  '/offline.html',
-];
+// Self-destruct when running against Vite dev server
+if (self.location && self.location.hostname === 'localhost') {
+  self.registration.unregister();
+  self.addEventListener('install', function(e) { self.skipWaiting(); });
+  self.addEventListener('activate', function(e) { self.clients.claim(); });
+} else {
+  const CACHE_NAME = 'medassist-v2';
+  const API_CACHE_NAME = 'medassist-api-v2';
+  const API_CACHE_DURATION = 5 * 60 * 1000;
 
-const API_CACHE_NAME = 'medassist-api-v1';
-const API_CACHE_DURATION = 5 * 60 * 1000;
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name.startsWith('medassist-') && name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      );
-    })
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirstWithCache(request));
-    return;
-  }
-
-  if (
-    request.url.includes('firestore') ||
-    request.url.includes('firebase') ||
-    request.url.includes('googleapis')
-  ) {
-    event.respondWith(networkFirstWithCache(request));
-    return;
-  }
-
-  if (
-    request.destination === 'style' ||
-    request.destination === 'script' ||
-    request.destination === 'font' ||
-    request.destination === 'image'
-  ) {
-    event.respondWith(cacheFirstWithUpdate(request));
-    return;
-  }
-
-  event.respondWith(networkFirstWithFallback(request));
-});
-
-async function networkFirstWithCache(request) {
-  const cache = await caches.open(API_CACHE_NAME);
-
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const clonedResponse = response.clone();
-      const cacheEntry = {
-        response: clonedResponse,
-        timestamp: Date.now(),
-      };
-      const cacheResponse = new Response(JSON.stringify(cacheEntry), {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      cache.put(request.url, cacheResponse);
-    }
-    return response;
-  } catch (error) {
-    const cachedEntry = await cache.match(request.url);
-    if (cachedEntry) {
-      try {
-        const entry = await cachedEntry.json();
-        if (entry.timestamp && Date.now() - entry.timestamp < API_CACHE_DURATION) {
-          return new Response(JSON.stringify(entry.response), {
-            headers: { 'Content-Type': 'application/json' },
-          });
-        }
-      } catch (e) {
-        return cachedEntry;
-      }
-    }
-    return new Response(
-      JSON.stringify({ status: 'offline', message: 'You are offline. Some features may be unavailable.' }),
-      {
-        status: 503,
-        headers: { 'Content-Type': 'application/json' },
-      }
+  self.addEventListener('install', (event) => {
+    self.skipWaiting();
+    event.waitUntil(
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.addAll(['/', '/index.html', '/manifest.json', '/favicon.svg', '/offline.html']).catch(() => {})
+      )
     );
-  }
-}
+  });
 
-async function cacheFirstWithUpdate(request) {
-  const cache = await caches.open(CACHE_NAME);
-  const cachedResponse = await cache.match(request);
+  self.addEventListener('activate', (event) => {
+    event.waitUntil(
+      caches.keys().then((names) =>
+        Promise.all(names.filter((n) => n.startsWith('medassist-') && n !== CACHE_NAME).map((n) => caches.delete(n)))
+      ).then(() => self.clients.claim())
+    );
+  });
 
-  if (cachedResponse) {
-    fetch(request).then((response) => {
+  self.addEventListener('fetch', (event) => {
+    const { request } = event;
+    const url = new URL(request.url);
+    const isNavigate = request.mode === 'navigate';
+
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) {
+      event.respondWith(networkFirstWithCache(request));
+      return;
+    }
+    if (request.url.includes('firestore') || request.url.includes('firebase') || request.url.includes('googleapis')) {
+      event.respondWith(networkFirstWithCache(request));
+      return;
+    }
+    if (request.destination === 'style' || request.destination === 'script' || request.destination === 'font' || request.destination === 'image') {
+      event.respondWith(cacheFirstWithUpdate(request));
+      return;
+    }
+    event.respondWith(isNavigate ? networkFirstWithFallback(request) : networkFirstWithFallback(request));
+  });
+
+  async function networkFirstWithCache(request) {
+    const cache = await caches.open(API_CACHE_NAME);
+    try {
+      const response = await fetch(request);
       if (response.ok) {
-        cache.put(request, response);
+        const entry = { response: response.clone(), timestamp: Date.now() };
+        await cache.put(request.url, new Response(JSON.stringify(entry), { headers: { 'Content-Type': 'application/json' } }));
       }
-    }).catch(() => {});
-    return cachedResponse;
+      return response;
+    } catch {
+      const cached = await cache.match(request.url);
+      if (cached) {
+        try {
+          const entry = await cached.json();
+          if (entry.timestamp && Date.now() - entry.timestamp < API_CACHE_DURATION) {
+            return new Response(JSON.stringify(entry.response), { headers: { 'Content-Type': 'application/json' } });
+          }
+        } catch {}
+      }
+      return new Response(JSON.stringify({ status: 'offline' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+    }
   }
 
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      cache.put(request, response.clone());
+  async function cacheFirstWithUpdate(request) {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
+    if (cached) {
+      fetch(request).then((r) => { if (r.ok) cache.put(request, r); }).catch(() => {});
+      return cached;
     }
-    return response;
-  } catch (error) {
-    return caches.match('/offline.html');
+    try {
+      const response = await fetch(request);
+      if (response.ok) cache.put(request, response.clone());
+      return response;
+    } catch {
+      return caches.match('/offline.html');
+    }
+  }
+
+  async function networkFirstWithFallback(request) {
+    try {
+      const response = await fetch(request);
+      if (response.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(request, response.clone());
+      }
+      return response;
+    } catch {
+      const cached = await caches.match(request);
+      return cached || caches.match('/offline.html');
+    }
   }
 }
 
-async function networkFirstWithFallback(request) {
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch (error) {
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    return caches.match('/offline.html');
-  }
-}
-
+// Push notification handlers (work in both dev and production)
 self.addEventListener('push', (event) => {
   if (!event.data) return;
-
   try {
     const data = event.data.json();
     const options = {
@@ -155,39 +109,27 @@ self.addEventListener('push', (event) => {
       icon: '/favicon.svg',
       badge: '/favicon.svg',
       vibrate: [200, 100, 200],
-      data: {
-        url: data.url || '/',
-      },
+      data: { url: data.url || '/' },
       actions: [
         { action: 'view', title: 'View' },
         { action: 'dismiss', title: 'Dismiss' },
       ],
     };
-
-    event.waitUntil(
-      self.registration.showNotification(data.title || 'MedAssist AI', options)
-    );
-  } catch (error) {
-    console.error('Push notification error:', error);
+    event.waitUntil(self.registration.showNotification(data.title || 'MedAssist AI', options));
+  } catch (e) {
+    console.error('Push notification error:', e);
   }
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-
   if (event.action === 'dismiss') return;
-
-  const urlToOpen = event.notification.data?.url || '/';
+  const url = event.notification.data?.url || '/';
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      const client = list.find((c) => c.url === url);
+      if (client && 'focus' in client) return client.focus();
+      return clients.openWindow(url);
     })
   );
 });

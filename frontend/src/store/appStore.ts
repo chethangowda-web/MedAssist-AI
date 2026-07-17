@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { DashboardStats, ActivityItem } from '@types/index';
+import type { DashboardStats, ActivityItem } from '@typings/index';
 
 interface AppStore {
   sidebarOpen: boolean;

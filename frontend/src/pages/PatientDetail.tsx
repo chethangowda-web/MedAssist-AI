@@ -16,7 +16,7 @@ import {
   ShieldCheck, User, Baby, Syringe,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { Patient, Visit, RiskAssessment } from '@types/index';
+import type { Patient, Visit, RiskAssessment } from '@typings/index';
 
 export function PatientDetail() {
   const { id } = useParams();

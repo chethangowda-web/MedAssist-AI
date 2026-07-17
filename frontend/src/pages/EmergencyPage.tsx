@@ -9,7 +9,7 @@ import { LoadingSpinner } from '@components/ui/LoadingSpinner';
 import { emergencyApi } from '@services/api';
 import { AlertTriangle, Phone, Hospital, Shield, MapPin, ChevronRight, Heart, Activity, Thermometer, Droplets, Ambulance } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { EmergencyProtocol } from '@types/index';
+import type { EmergencyProtocol } from '@typings/index';
 
 export function EmergencyPage() {
   const [showTriage, setShowTriage] = useState(false);
@@ -97,7 +97,7 @@ export function EmergencyPage() {
               {Object.entries(contacts).map(([name, number]) => (
                 <a
                   key={name}
-                  href={`tel:${number}`}
+                  href={`tel:${String(number)}`}
                   className="flex items-center justify-between p-3 rounded-xl hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
@@ -108,7 +108,7 @@ export function EmergencyPage() {
                       <p className="text-sm font-medium text-surface-900 dark:text-white capitalize">
                         {name.replace(/_/g, ' ')}
                       </p>
-                      <p className="text-xs text-surface-500">{number}</p>
+                      <p className="text-xs text-surface-500">{String(number)}</p>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-surface-400" />

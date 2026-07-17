@@ -17,16 +17,28 @@ const queryClient = new QueryClient({
 });
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(
-      (registration) => {
-        console.log('SW registered:', registration.scope);
-      },
-      (error) => {
-        console.log('SW registration failed:', error);
-      }
-    );
-  });
+  if (import.meta.env.PROD) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then(
+        (registration) => {
+          console.log('SW registered:', registration.scope);
+        },
+        (error) => {
+          console.log('SW registration failed:', error);
+        }
+      );
+    });
+  } else {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister().then((unregistered) => {
+            if (unregistered) console.log('Unregistered old service worker');
+          });
+        }
+      });
+    });
+  }
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

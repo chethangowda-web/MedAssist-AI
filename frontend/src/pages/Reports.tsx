@@ -16,7 +16,7 @@ import {
   FileDown, Sparkles,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { Report } from '@types/index';
+import type { Report } from '@typings/index';
 
 export function Reports() {
   const queryClient = useQueryClient();

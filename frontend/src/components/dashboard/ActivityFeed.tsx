@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Activity, UserPlus, AlertTriangle, FileText, Bell } from 'lucide-react';
 import { formatTimeAgo, getRiskColor } from '@utils/helpers';
-import type { ActivityItem } from '@types/index';
+import type { ActivityItem } from '@typings/index';
 import { useNavigate } from 'react-router-dom';
 
 interface ActivityFeedProps {

@@ -26,7 +26,7 @@ class Settings(BaseSettings):
 
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
 
-    CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000", "https://medassist-ai.web.app"]
+    CORS_ORIGINS: list = ["http://localhost:5173", "http://[::1]:5173", "http://localhost:3000", "https://medassist-ai.web.app"]
 
     RATE_LIMIT: str = "100/minute"
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024
@@ -45,5 +45,6 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"
 
 settings = Settings()

@@ -21,6 +21,41 @@
   </head>
   <body class="antialiased">
     <div id="root"></div>
+    <script>
+      (function() {
+        // 1. Unregister stale service workers immediately
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            for (var i = 0; i < regs.length; i++) {
+              regs[i].unregister();
+            }
+          });
+        }
+        // 2. Strip ?token= query param injected by React DevTools from all WebSocket URLs
+        try {
+          var iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          document.documentElement.appendChild(iframe);
+          var cleanWS = iframe.contentWindow.WebSocket;
+          document.documentElement.removeChild(iframe);
+          if (cleanWS) {
+            window.WebSocket = function(url, protocols) {
+              if (typeof url === 'string') {
+                url = url.replace(/[\?&]token=[^&]*/g, '');
+              }
+              return new cleanWS(url, protocols);
+            };
+            window.WebSocket.prototype = cleanWS.prototype;
+            window.WebSocket.CONNECTING = 0;
+            window.WebSocket.OPEN = 1;
+            window.WebSocket.CLOSING = 2;
+            window.WebSocket.CLOSED = 3;
+          }
+        } catch(e) {
+          // fallback: do nothing
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

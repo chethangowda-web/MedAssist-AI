@@ -15,7 +15,7 @@ import {
   Activity, Sparkles, ArrowRight, MessageSquare,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { RiskAssessment, KnowledgeResult, SchemeRecommendation } from '@types/index';
+import type { RiskAssessment, KnowledgeResult, SchemeRecommendation } from '@typings/index';
 
 const agentIcons: Record<string, any> = {
   UserPlus: Icons.UserPlus,

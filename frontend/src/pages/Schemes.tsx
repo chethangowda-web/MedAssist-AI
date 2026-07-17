@@ -13,7 +13,7 @@ import {
   IndianRupee, Sparkles, Heart, Baby, Shield, Users,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { SchemeRecommendation } from '@types/index';
+import type { SchemeRecommendation } from '@typings/index';
 
 const categoryIcons: Record<string, any> = {
   health_insurance: Shield,
