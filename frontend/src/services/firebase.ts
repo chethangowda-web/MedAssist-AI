@@ -1,43 +1,26 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, type Auth } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: 'AIzaSyC4ShV1yv9Xd8RNtf-z0OsxDKAb6VRCXS8',
+  authDomain: 'medassistai-b1433.firebaseapp.com',
+  projectId: 'medassistai-b1433',
+  storageBucket: 'medassistai-b1433.firebasestorage.app',
+  messagingSenderId: '901412182945',
+  appId: '1:901412182945:web:27d0e24b75da0650cd09e0',
 };
 
-const hasFirebaseConfig = Object.values(firebaseConfig).every(Boolean);
-
-let app: FirebaseApp | undefined;
-let auth: Auth | undefined;
-let googleProvider: GoogleAuthProvider | undefined;
-
-if (hasFirebaseConfig) {
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    googleProvider = new GoogleAuthProvider();
-  } catch (e) {
-    console.warn('Firebase initialization failed:', e);
-  }
-} else {
-  console.warn('Firebase env vars not set — auth features disabled');
-}
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async () => {
-  if (!auth || !googleProvider) throw new Error('Firebase not initialized');
   const result = await signInWithPopup(auth, googleProvider);
   return result.user;
 };
 
 export const signOutUser = async () => {
-  if (!auth) return;
   await signOut(auth);
 };
 
-export { app, auth, googleProvider };
 export default app;
